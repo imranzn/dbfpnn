@@ -173,7 +173,7 @@ model Review {
   id        Int       @id @default(autoincrement())
   userId    Int       @map("user_id")
   movieId   Int       @map("movie_id")
-  rating    Int
+  rating    Int       @db.SmallInt // optional, biar lebih efisien
   content   String?
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
@@ -188,6 +188,7 @@ model Review {
   @@index([rating])
   @@index([createdAt])
 }
+
 
 model Comment {
   id        Int       @id @default(autoincrement())

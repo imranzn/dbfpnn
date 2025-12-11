@@ -1,64 +1,74 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Star, Calendar, Award, Film, MessageSquare, Instagram, Twitter, ChevronDown, ChevronUp } from "lucide-react"
-import Link from "next/link"
-import Image from "next/image"
+import { useState } from "react";
 
-// We need to separate the client logic (collapsible chart) from the server data fetching.
-// So we'll create a client component for the content and keep the page as server component.
-// But for now, since the file is already a mix, let's refactor it properly.
-// Wait, the previous file was a Server Component (async). I cannot use useState in it.
-// I must refactor the interactive parts into a Client Component.
+export default function RatingModal({ movieId, onClose, onSuccess }) {
+  const [rating, setRating] = useState(0);
+  const [content, setContent] = useState("");
+  const [loading, setLoading] = useState(false);
 
-// Let's create a new component `UserProfileContent.tsx` and use it in `page.tsx`.
-// But first, let's read the current file content again to be sure.
-// I already read it in step 2436. It was a server component but had no interactivity yet.
-// Now I need to add interactivity (collapsible chart).
+  async function submit() {
+    if (!rating) return alert("Pilih rating dulu");
 
-// Strategy:
-// 1. Rename current `page.tsx` logic to `UserProfileContent.tsx` (Client Component).
-// 2. Update `page.tsx` to fetch data and pass it to `UserProfileContent`.
+    setLoading(true);
 
-// Actually, I can just make a `RatingStats.tsx` client component and keep the rest server-side.
-// That's cleaner.
+    const res = await fetch("/api/reviews", {
+      method: "POST",
+      body: JSON.stringify({ movieId, rating, content }),
+      headers: { "Content-Type": "application/json" },
+    });
 
-export default function RatingStats({ ratingStats, totalRatings }: { ratingStats: Record<number, number>, totalRatings: number }) {
-    const [isExpanded, setIsExpanded] = useState(false)
+    const data = await res.json();
+    setLoading(false);
 
-    const scoresToShow = isExpanded ? [10, 9, 8, 7, 6, 5, 4, 3, 2, 1] : [10, 9, 8, 7]
+    if (!res.ok) {
+      alert(data.message || "Gagal submit rating");
+      return;
+    }
 
-    return (
-        <div className="bg-[#1a1a1a] p-6 rounded-xl border border-gray-800 sticky top-24">
-            <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-white">Statistik Rating</h3>
-            </div>
+    onSuccess?.(data);
+    onClose();
+  }
 
-            <div className="space-y-3">
-                {scoresToShow.map(score => (
-                    <div key={score} className="flex items-center gap-3">
-                        <div className="w-8 text-sm font-bold text-right">{score}</div>
-                        <div className="flex-1 h-2 bg-gray-700 rounded-full overflow-hidden">
-                            <div
-                                className="h-full bg-primary"
-                                style={{ width: `${totalRatings > 0 ? (ratingStats[score] / totalRatings) * 100 : 0}%` }}
-                            ></div>
-                        </div>
-                        <div className="w-6 text-xs text-gray-500 text-right">{ratingStats[score]}</div>
-                    </div>
-                ))}
-            </div>
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+      <div className="bg-white p-4 rounded-lg w-80">
+        <h3 className="text-lg font-bold mb-2">Beri Rating</h3>
 
+        <div className="flex gap-1 mb-3">
+          {[1,2,3,4,5].map((s) => (
             <button
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="w-full mt-4 flex items-center justify-center gap-1 text-sm text-primary hover:text-white transition-colors"
+              key={s}
+              onClick={() => setRating(s)}
+              className={`p-2 text-xl ${rating >= s ? "text-yellow-500" : "text-gray-400"}`}
             >
-                {isExpanded ? (
-                    <>Sembunyikan <ChevronUp size={16} /></>
-                ) : (
-                    <>Tampilkan Semua <ChevronDown size={16} /></>
-                )}
+              ★
             </button>
+          ))}
         </div>
-    )
+
+        <textarea
+          className="w-full border rounded p-2 mb-3"
+          placeholder="Tulis komentar..."
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+        />
+
+        <button
+          className="w-full bg-blue-600 text-white py-2 rounded"
+          onClick={submit}
+          disabled={loading}
+        >
+          {loading ? "Mengirim..." : "Submit Rating"}
+        </button>
+
+        <button
+          className="w-full mt-2 text-gray-500"
+          onClick={onClose}
+        >
+          Batal
+        </button>
+      </div>
+    </div>
+  );
 }
