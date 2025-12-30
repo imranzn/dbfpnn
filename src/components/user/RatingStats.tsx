@@ -1,55 +1,48 @@
 "use client"
 
-import { useState } from "react"
-import { Star, Calendar, Award, Film, MessageSquare, Instagram, Twitter, ChevronDown, ChevronUp } from "lucide-react"
-import Link from "next/link"
-import Image from "next/image"
+type Props = {
+  ratingStats: Record<number, number>
+  totalRatings: number
+}
 
-// We need to separate the client logic (collapsible chart) from the server data fetching.
-// So we'll create a client component for the content and keep the page as server component.
-// But for now, since the file is already a mix, let's refactor it properly.
-// Wait, the previous file was a Server Component (async). I cannot use useState in it.
-// I must refactor the interactive parts into a Client Component.
+export default function RatingStats({ ratingStats, totalRatings }: Props) {
+  const levels = [5, 4, 3, 2, 1]
 
-// Let's create a new component `UserProfileContent.tsx` and use it in `page.tsx`.
-// But first, let's read the current file content again to be sure.
-// I already read it in step 2436. It was a server component but had no interactivity yet.
-// Now I need to add interactivity (collapsible chart).
+  return (
+    <div className="bg-[#1a1a1a] rounded-2xl border border-gray-800 p-6">
+      <h3 className="text-white font-bold text-lg mb-4">Statistik Rating</h3>
 
-// Strategy:
-// 1. Rename current `page.tsx` logic to `UserProfileContent.tsx` (Client Component).
-// 2. Update `page.tsx` to fetch data and pass it to `UserProfileContent`.
+      <div className="text-sm text-gray-400 mb-4">
+        Total rating: <span className="text-white font-bold">{totalRatings}</span>
+      </div>
 
-// Actually, I can just make a `RatingStats.tsx` client component and keep the rest server-side.
-// That's cleaner.
+      {totalRatings === 0 ? (
+        <p className="text-gray-500 italic">Belum ada rating.</p>
+      ) : (
+        <div className="space-y-2">
+          {levels.map((n) => {
+            const count = ratingStats?.[n] ?? 0
+            const pct = totalRatings > 0 ? Math.round((count / totalRatings) * 100) : 0
 
-export default function RatingStats({ ratingStats, totalRatings }: { ratingStats: Record<number, number>, totalRatings: number }) {
-    const [isExpanded, setIsExpanded] = useState(false)
+            return (
+              <div key={n} className="flex items-center gap-3">
+                <div className="w-8 text-sm text-gray-300 font-bold">{n}</div>
 
-    const scoresToShow = isExpanded ? [5, 4, 3, 2, 1] : [5, 4, 3, 2, 1]
+                <div className="flex-1 h-2 rounded-full bg-[#252525] overflow-hidden border border-gray-700">
+                  <div
+                    className="h-full bg-yellow-500"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
 
-    return (
-        <div className="bg-[#1a1a1a] p-6 rounded-xl border border-gray-800 sticky top-24">
-            <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-white">Statistik Rating</h3>
-            </div>
-
-            <div className="space-y-3">
-                {scoresToShow.map(score => (
-                    <div key={score} className="flex items-center gap-3">
-                        <div className="w-8 text-sm font-bold text-right">{score}</div>
-                        <div className="flex-1 h-2 bg-gray-700 rounded-full overflow-hidden">
-                            <div
-                                className="h-full bg-primary"
-                                style={{ width: `${totalRatings > 0 ? (ratingStats[score] / totalRatings) * 100 : 0}%` }}
-                            ></div>
-                        </div>
-                        <div className="w-6 text-xs text-gray-500 text-right">{ratingStats[score]}</div>
-                    </div>
-                ))}
-            </div>
-
-
+                <div className="w-14 text-right text-sm text-gray-400">
+                  {count} <span className="text-gray-600">({pct}%)</span>
+                </div>
+              </div>
+            )
+          })}
         </div>
-    )
+      )}
+    </div>
+  )
 }
